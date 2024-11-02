@@ -1,16 +1,31 @@
-" Title:        Vim RestMan
-" Description:  A REST client plugin for Vim
-" Last Change:  2023-05-28
-" Maintainer:   Your Name <your.email@example.com>
+" vim_restman.vim - RestMan Plugin for Vim
+" Author:       Your Name
+" Version:      1.0
 
 if exists("g:loaded_vim_restman")
     finish
 endif
 let g:loaded_vim_restman = 1
 
-" Exposes the plugin's functions for use as commands in Vim.
-command! -nargs=0 RestManCapture call vim_restman#CaptureAndPrintText()
+" Check if Vim is in compatible mode
+if &compatible
+    echo "vim_restman: This plugin requires 'nocompatible' mode. Add 'set nocompatible' to your .vimrc"
+    finish
+endif
 
-" Map Ctrl+j (lowercase) to the capture and print function
-nnoremap <silent> <C-j> :call vim_restman#CaptureAndPrintText()<CR>
+" Define default mappings if they don't exist
+if !hasmapto('<Plug>RestManMain')
+    nmap <unique> <C-i> <Plug>RestManMain
+endif
+
+" Define <Plug> mapping
+nnoremap <unique> <script> <Plug>RestManMain <SID>Main
+nnoremap <SID>Main :call vim_restman#Main()<CR>
+
+" Define commands
+command! -nargs=0 RestManMain call vim_restman#Main()
+
+" You can add more configuration options or default settings here
+
+" vim:set ft=vim et sw=4:
 
