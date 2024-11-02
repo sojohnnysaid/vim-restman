@@ -1,6 +1,16 @@
 # vim-restman
-make an api call to get your token, have it saved, make other requests, all in a file using vim
 
-I made this because other solutions just didn't work quite like how I would of
-liked, and the only CLI tool I found was called "Hurl" and I didn't want to say
-that outloud at my job over and over again...
+A Vim plugin for capturing text between delimiters.
+
+## Features
+
+- Capture text between `--` delimiters
+- Print the captured text
+
+## Installation
+
+Using vim-plug:
+
+```vim
+Plug 'sojohnnysaid/vim-restman'
+

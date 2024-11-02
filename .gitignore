@@ -1,0 +1,88 @@
+# Vim temporary files
+*.swp
+*.swo
+*~
+
+# Vim persistent undo files
+*.un~
+
+# Vim session files
+Session.vim
+
+# Vim netrw history
+.netrwhist
+
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows system files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux backup files
+*~
+
+# Tags files (from ctags)
+tags
+
+# Logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variable files
+.env
+.env.test
+
+# Temporary folders
+tmp/
+temp/
+
+# Vim-Plug directory (if you use it)
+plugged/
+
+# Any local configuration files
+*.local
+
+# IDE-specific files (add more if needed)
+.vscode/
+.idea/
+
+# Python bytecode (if you use any Python scripts)
+__pycache__/
+*.py[cod]
+
+# Ruby files (if you use any Ruby for testing)
+*.gem
+*.rbc
+/.config
+
+# Backup files
+*.bak
+
