@@ -1,16 +1,32 @@
-if exists("g:loaded_vim_restman")
-    finish
-endif
-let g:loaded_vim_restman = 1
-
-" Create a log file in the same directory as the script
-let s:log_file = expand('<sfile>:p:h') . '/vim-restman.log'
+let s:log_buffer_name = 'vim-restman-log'
 
 function! s:Log(message)
-    call writefile([strftime('%Y-%m-%d %H:%M:%S') . ': ' . a:message], s:log_file, 'a')
+    let l:log_msg = strftime('%Y-%m-%d %H:%M:%S') . ': ' . a:message
+    
+    " Find or create the log buffer
+    let l:buf_num = bufnr(s:log_buffer_name)
+    if l:buf_num == -1
+        execute 'botright new ' . s:log_buffer_name
+        setlocal buftype=nofile bufhidden=hide noswapfile
+    else
+        let l:win_num = bufwinnr(l:buf_num)
+        if l:win_num == -1
+            execute 'botright split'
+            execute l:buf_num . 'buffer'
+        else
+            execute l:win_num . 'wincmd w'
+        endif
+    endif
+    
+    " Append the log message
+    call append(line('$'), l:log_msg)
+    normal! G
+    
+    " Return to the previous window
+    wincmd p
 endfunction
 
-function! s:CaptureAndPrintText()
+function! vim_restman#CaptureAndPrintText()
     call s:Log('Ctrl+j pressed, function called')
 
     " Save the current cursor position
@@ -48,19 +64,14 @@ function! s:CaptureAndPrintText()
 
     call s:Log('Text captured successfully')
 
-    " Create a new split window for output
-    new
-    setlocal buftype=nofile bufhidden=wipe nobuflisted noswapfile nowrap
-    call setline(1, "Captured Text:")
-    call setline(2, "----------------------------------------")
-    call setline(3, split(l:captured_text, "\n"))
-    call setline(line('$') + 1, "----------------------------------------")
+    " Log the captured text
+    call s:Log('Captured Text:')
+    call s:Log('----------------------------------------')
+    for line in split(l:captured_text, "\n")
+        call s:Log(line)
+    endfor
+    call s:Log('----------------------------------------')
     
-    call s:Log('Output displayed in new buffer')
+    call s:Log('Output displayed in log buffer')
 endfunction
-
-" Map Ctrl+j (lowercase) to the capture and print function
-nnoremap <silent> <C-j> :call <SID>CaptureAndPrintText()<CR>
-
-call s:Log('Plugin loaded')
 
