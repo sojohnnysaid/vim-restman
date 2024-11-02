@@ -25,6 +25,11 @@ nnoremap <SID>Main :call vim_restman#Main()<CR>
 " Define commands
 command! -nargs=0 RestManMain call vim_restman#Main()
 
+" Include all the function definitions here
+" (s:IsRestFile, s:ParseCurrentFile, s:CaptureBetweenDelimiters, s:ParseCapturedText, 
+" s:GetRequestIndexFromCursor, s:BuildCurlCommand, s:ExecuteCurlCommand, 
+" s:CreateRestManWindow, s:PopulateRestManBuffer)
+
 " You can add more configuration options or default settings here
 
 " vim:set ft=vim et sw=4:

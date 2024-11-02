@@ -10,35 +10,61 @@ let s:restman_bufnr = 0
 function! vim_restman#Main()
     echom "vim_restman#Main() called"
     
-    if s:IsValidRestFile()
-        call s:SaveOriginalState()
-        call s:LogInitialState()
-        let l:captured_text = s:CaptureBetweenDelimiters()
-        let l:parsed_data = s:ParseCapturedText(l:captured_text)
-        let l:curl_command = s:BuildCurlCommand(l:parsed_data)
-        let l:curl_output = s:ExecuteCurlCommand(l:curl_command)
-        call s:CreateRestManWindow()
-        call s:PopulateRestManBuffer(l:parsed_data, l:curl_command, l:curl_output)
-        call s:LogFinalState()
-        call s:ReturnToOriginalWindow()
+    if !s:IsRestFile()
+        echom "Not a .rest file, exiting"
+        return
     endif
+
+    call s:SaveOriginalState()
+
+    let l:parsed_data = s:ParseCurrentFile()
+    let l:request_index = s:GetRequestIndexFromCursor(l:parsed_data)
+    let l:curl_command = s:BuildCurlCommand(l:parsed_data, l:request_index)
+    let l:output = s:ExecuteCurlCommand(l:curl_command)
+
+    call s:CreateRestManWindow()
+    call s:PopulateRestManBuffer(l:parsed_data, l:curl_command, l:output, l:request_index)
+    
+    call s:ReturnToOriginalWindow()
+    echom "Returned to original window"
 endfunction
 
 " --- File Validation ---
-function! s:IsValidRestFile()
+function! s:IsRestFile()
     let l:current_file = expand('%:p')
     let l:file_extension = fnamemodify(l:current_file, ':e')
     echom "Current file: " . l:current_file
     echom "File extension: " . l:file_extension
+    return l:file_extension ==# 'rest'
+endfunction
 
-    if l:file_extension != 'rest'
-        echom "File extension is not .rest, exiting"
-        echo "RestMan: This file is not a .rest file."
-        return 0
-    endif
+function! s:ParseCurrentFile()
+    let l:captured_text = s:CaptureBetweenDelimiters('#Globals Start', '#Requests End')
+    return s:ParseCapturedText(l:captured_text)
+endfunction
 
-    echom "File is a .rest file, proceeding"
-    return 1
+function! s:CaptureBetweenDelimiters(start_delimiter, end_delimiter)
+    let l:start_line = search(a:start_delimiter, 'n')
+    let l:end_line = search(a:end_delimiter, 'n')
+    return getline(l:start_line, l:end_line)
+endfunction
+
+function! s:GetRequestIndexFromCursor(parsed_data)
+    let l:cursor_line = line('.')
+    let l:request_index = 0
+    let l:start_line = search('^#Requests Start', 'n')
+    let l:end_line = search('^#Requests End', 'n')
+    
+    for i in range(len(a:parsed_data.requests))
+        let l:request_start = search('^\s*--\s*$', 'n', l:end_line)
+        let l:request_end = search('^\s*--\s*$', 'n', l:end_line)
+        if l:cursor_line >= l:request_start && l:cursor_line <= l:request_end
+            let l:request_index = i
+            break
+        endif
+    endfor
+    
+    return l:request_index
 endfunction
 
 " --- Window and Buffer Management ---
@@ -58,53 +84,18 @@ function! s:ReturnToOriginalWindow()
 endfunction
 
 function! s:CreateRestManWindow()
-    echom "s:CreateRestManWindow() called"
-
-    let l:restman_buf = bufnr('RestMan')
-    if l:restman_buf != -1
-        let l:restman_win = bufwinnr(l:restman_buf)
-        if l:restman_win != -1
-            execute l:restman_win . 'wincmd w'
-        else
-            execute 'vertical split'
-            execute 'buffer ' . l:restman_buf
-        endif
-    else
-        execute 'vertical split RestMan'
-        setlocal buftype=nofile
-        setlocal bufhidden=hide
-        setlocal noswapfile
-    endif
-
-    let s:restman_winid = win_getid()
+    vsplit
+    enew
+    setlocal buftype=nofile
+    setlocal bufhidden=hide
+    setlocal noswapfile
+    file RestMan
     let s:restman_bufnr = bufnr('%')
-    echom "RestMan window ID: " . s:restman_winid
+    echom "RestMan window ID: " . win_getid()
     echom "RestMan buffer number: " . s:restman_bufnr
-    echom "Window layout after split: " . s:GetWindowLayout()
 endfunction
 
 " --- Text Capture and Parsing ---
-function! s:CaptureBetweenDelimiters()
-    echom "s:CaptureBetweenDelimiters() called"
-    let l:current_line = line('.')
-    let l:current_col = col('.')
-
-    let l:start_line = search('^#Globals Start$', 'bnW')
-    let l:end_line = search('^#Requests End$', 'nW')
-
-    if l:start_line == 0 || l:end_line == 0 || l:current_line < l:start_line || l:current_line > l:end_line
-        echom "Cursor not within valid section"
-        return []
-    endif
-
-    let l:captured_text = getline(l:start_line, l:end_line)
-    echom "Captured text: " . string(l:captured_text)
-
-    call cursor(l:current_line, l:current_col)
-
-    return l:captured_text
-endfunction
-
 function! s:ParseCapturedText(captured_text)
     echom "s:ParseCapturedText() called"
     let l:parsed_data = {
@@ -135,11 +126,14 @@ function! s:ParseCapturedText(captured_text)
                 let l:parsed_data.globals[l:current_key] .= (empty(l:parsed_data.globals[l:current_key]) ? '' : ' ') . l:trimmed_line
             endif
         elseif l:current_section == 'requests'
-            if l:trimmed_line =~ '^POST'
+            if l:trimmed_line == '--'
                 if !empty(l:current_request)
                     call add(l:parsed_data.requests, l:current_request)
+                    let l:current_request = {}
                 endif
-                let l:current_request = {'method': 'POST', 'endpoint': split(l:trimmed_line)[1], 'body': ''}
+            elseif l:trimmed_line =~ '^\(GET\|POST\|PUT\|DELETE\|PATCH\)'
+                let [l:method, l:endpoint] = split(l:trimmed_line, ' ')
+                let l:current_request = {'method': l:method, 'endpoint': l:endpoint, 'body': ''}
             elseif !empty(l:current_request)
                 let l:current_request.body .= l:trimmed_line . "\n"
             endif
@@ -150,7 +144,6 @@ function! s:ParseCapturedText(captured_text)
         call add(l:parsed_data.requests, l:current_request)
     endif
 
-    " Trim trailing spaces from global values
     for key in keys(l:parsed_data.globals)
         let l:parsed_data.globals[key] = trim(l:parsed_data.globals[key])
     endfor
@@ -159,9 +152,8 @@ function! s:ParseCapturedText(captured_text)
     return l:parsed_data
 endfunction
 
-
 " --- Curl Command Building and Execution ---
-function! s:BuildCurlCommand(parsed_data)
+function! s:BuildCurlCommand(parsed_data, request_index)
     echom "s:BuildCurlCommand() called"
     
     let l:base_url = trim(get(a:parsed_data.globals, 'base_url', ''))
@@ -169,7 +161,6 @@ function! s:BuildCurlCommand(parsed_data)
     let l:variables = get(a:parsed_data.globals, 'variables', '')
     let l:capture = get(a:parsed_data.globals, 'capture', '')
 
-    " Process environment variables
     let l:variables_dict = {}
     for var_line in split(l:variables, ' ')
         let l:parts = split(var_line, '=')
@@ -183,12 +174,10 @@ function! s:BuildCurlCommand(parsed_data)
         endif
     endfor
 
-    " Start building the curl command
     let l:curl_command = 'curl -s'
 
-    " Add method and URL
-    if !empty(a:parsed_data.requests)
-        let l:request = a:parsed_data.requests[0]
+    if len(a:parsed_data.requests) > a:request_index
+        let l:request = a:parsed_data.requests[a:request_index]
         let l:method = get(l:request, 'method', 'GET')
         let l:endpoint = get(l:request, 'endpoint', '')
         let l:url = l:base_url . l:endpoint
@@ -196,11 +185,10 @@ function! s:BuildCurlCommand(parsed_data)
         let l:curl_command .= ' -X ' . l:method
         let l:curl_command .= ' "' . l:url . '"'
     else
-        echom "Error: No request found in parsed data"
+        echom "Error: No request found at index " . a:request_index
         return ''
     endif
 
-    " Add headers
     for header_line in split(l:headers, "\n")
         let l:trimmed_header = trim(header_line)
         if !empty(l:trimmed_header)
@@ -208,21 +196,18 @@ function! s:BuildCurlCommand(parsed_data)
         endif
     endfor
 
-    " Add body for POST requests
-    if l:method == 'POST' && has_key(l:request, 'body')
+    if l:method =~ '\v^(POST|PUT|PATCH)$' && has_key(l:request, 'body')
         let l:body = l:request.body
-        " Replace variables in the body
         for [var_name, var_value] in items(l:variables_dict)
             let l:body = substitute(l:body, ':' . var_name, var_value, 'g')
         endfor
-        let l:body = substitute(l:body, '\n', '', 'g')  " Remove newlines
+        let l:body = substitute(l:body, '\n', '', 'g')
         let l:curl_command .= " --data '" . escape(trim(l:body), "'") . "'"
     endif
 
     echom "Built curl command: " . l:curl_command
     return l:curl_command
 endfunction
-
 
 function! s:ExecuteCurlCommand(curl_command)
     echom "s:ExecuteCurlCommand() called"
@@ -231,42 +216,35 @@ function! s:ExecuteCurlCommand(curl_command)
     if l:status != 0
         let l:output = "Error executing curl command. Status: " . l:status . "\nOutput: " . l:output
     endif
-    echom "Curl command output: " . l:output
     return l:output
 endfunction
 
-
-
 " --- Buffer Population ---
-function! s:PopulateRestManBuffer(parsed_data, curl_command, curl_output)
+function! s:PopulateRestManBuffer(parsed_data, curl_command, output, request_index)
     echom "s:PopulateRestManBuffer() called"
-    echom "Current buffer: " . bufname('%')
-    silent %delete _
-
-    call append(0, "=== Globals ===")
+    let l:content = "=== Globals ===\n\n"
     for [key, value] in items(a:parsed_data.globals)
-        call append(line('$'), key . ": " . value)
+        let l:content .= key . ": " . value . "\n"
     endfor
-
-    call append(line('$'), "")
-    call append(line('$'), "=== Requests ===")
-    for request in a:parsed_data.requests
-        call append(line('$'), "Method: " . request.method)
-        call append(line('$'), "Endpoint: " . request.endpoint)
-        call append(line('$'), "Body:")
-        call append(line('$'), split(request.body, "\n"))
-        call append(line('$'), "")
-    endfor
-
-    call append(line('$'), "=== Curl Command ===")
-    call append(line('$'), a:curl_command)
-
-    call append(line('$'), "")
-    call append(line('$'), "=== Curl Output ===")
-    call append(line('$'), split(a:curl_output, "\n"))
-
-    normal! gg
-    echom "Buffer populated with parsed data, curl command, and output"
+    let l:content .= "\n=== Requests ===\n"
+    if len(a:parsed_data.requests) > a:request_index
+        let l:request = a:parsed_data.requests[a:request_index]
+        let l:content .= "Method: " . get(l:request, 'method', '') . "\n"
+        let l:content .= "Endpoint: " . get(l:request, 'endpoint', '') . "\n"
+        if has_key(l:request, 'body')
+            let l:content .= "Body:\n" . l:request.body . "\n"
+        endif
+    else
+        let l:content .= "No request found at index " . a:request_index . "\n"
+    endif
+    let l:content .= "\n=== Curl Command ===\n" . a:curl_command . "\n"
+    let l:content .= "\n=== Curl Output ===\n" . a:output
+    
+    execute 'buffer ' . s:restman_bufnr
+    setlocal modifiable
+    %delete _
+    call setline(1, split(l:content, "\n"))
+    setlocal nomodifiable
 endfunction
 
 " --- Logging ---
@@ -303,8 +281,6 @@ endfunction
 
 " --- JSON Processing (placeholder for jq integration) ---
 function! s:ProcessJsonWithJq(json, filter)
-    " This is a placeholder function for jq integration
-    " In a real implementation, you would call jq here
     echom "Processing JSON with jq filter: " . a:filter
     return "Processed JSON result"
 endfunction
