@@ -41,6 +41,6 @@ function! s:CaptureAndPrintText()
     echo "----------------------------------------"
 endfunction
 
-" Map Ctrl+J to the capture and print function
-nnoremap <C-J> :call <SID>CaptureAndPrintText()<CR>
+" Map Ctrl+j to the capture and print function
+nnoremap <C-j> :call <SID>CaptureAndPrintText()<CR>
 
