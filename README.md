@@ -1,89 +1,84 @@
-# Vim RestMan
+# 🚀 vim-restman
 
-A simple REST client plugin for Vim.
+Make API requests from the comfort of your Vim editor! 🛋️
 
-## Description
+## 🎭 What is vim-restman?
 
-Vim RestMan is a lightweight plugin designed to help developers work with REST APIs directly within Vim. It also saves your token, which for me is usually the first request I make when testing API endpoints.
+vim-restman is a Vim plugin that lets you send API requests directly from your Vim environment, just like Postman, but cooler! 😎 Save auth tokens on the fly and embrace the power of Vim for all your API testing needs.
 
-## Features
+## 🌟 Features
 
-- Capture text between `--` delimiters
-- Display captured text in a dedicated log buffer
-- Easy-to-use keyboard shortcut (Ctrl+j)
+- Make API requests right from your Vim editor 📡
+- Save authentication tokens automatically 🔐
+- Use .rest files to organize your API calls 📁
+- Global variables and headers support 🌍
+- Capture and reuse response data 🎣
 
-## Installation
+## 🛠️ Installation
 
-### Using vim-plug
+Using vim-plug:
 
-If you use [vim-plug](https://github.com/junegunn/vim-plug) for plugin management (recommended), add the following line to your `.vimrc`:
-
+```vim
 Plug 'sojohnnysaid/vim-restman'
+🚦 How to Use
+Create a .rest file (all files must have .rest extension)
+Set up your globals, variables, and requests
+Move your cursor between the -- delimiters
+Press Ctrl+i to send the API request
+Watch the magic happen on the right side of your screen! ✨
+📝 Example .rest File
+<TEXT>
+#Globals Start
 
-Then run `:PlugInstall` in Vim.
+@base_url
+http://localhost:8090
 
-### Manual Installation
+@headers
+Content-Type: application/json
+Authorization: Bearer :token
 
-If you prefer to install manually:
+@variables
+username=$username
+password=$password
 
-1. Clone this repository:
-   
-   git clone https://github.com/sojohnnysaid/vim-restman.git ~/.vim/pack/plugins/start/vim-restman
-   
-2. Restart Vim or source your `.vimrc`.
+@capture
+token
 
-## Usage
+#Globals End
 
-1. In your Vim buffer, write your API request between two `--` delimiters. For example:
+#Requests Start
 
-   --
-   GET https://api.example.com/users
-   Content-Type: application/json
-   
-   {
-     "user_id": 123
-   }
-   --
+--
+POST /api/collections/users/auth-with-password
+{
+    "identity":":username",
+    "password":":password"
+}
+--
 
-2. Place your cursor anywhere between the delimiters.
+--
+GET /api/collections/applicants/records
+--
 
-3. Press Ctrl+j or run the command `:RestManCapture`.
+#Requests End
 
-4. The text between the delimiters will be captured and displayed in a log buffer at the bottom of your Vim window.
+---
 
-## Commands
+🎉 Why vim-restman?
 
-- `:RestManCapture`: Captures and displays the text between delimiters.
+Because Vim is life 💚
 
-## Mappings
+API testing should be fun 🎈
 
-- `Ctrl+j`: Shortcut for the `:RestManCapture` command.
+Impress your colleagues with your Vim wizardry 🧙‍♂️
 
-## Configuration
+🤝 Contributing
+Pull requests are welcome! For major changes, please open an issue first to discuss what you would like to change.
 
-Currently, Vim RestMan doesn't require any additional configuration. It works out of the box once installed.
+📜 License
+MIT
 
-## Requirements
+🙋‍♂️ Author
+Created with love by [Your Name] 💖
 
-- Vim 8.0 or newer
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Support
-
-If you encounter any problems or have any suggestions, please open an issue on the [GitHub repository](https://github.com/sojohnnysaid/vim-restman/issues).
-
-## Authors
-
-- John Hargrove ([@sojohnnysaid](https://github.com/sojohnnysaid))
-
-## Acknowledgments
-
-- Thanks to the Vim community for continuous inspiration and support.
-
+Remember, with great power comes great responsibility. Use vim-restman wisely! 🦸‍♂️
