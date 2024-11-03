@@ -4,8 +4,8 @@
 function! vim_restman_utils#IsRestFile()
     let l:current_file = expand('%:p')
     let l:file_extension = fnamemodify(l:current_file, ':e')
-    #echom "Current file: " . l:current_file
-    #echom "File extension: " . l:file_extension
+    " echom "Current file: " . l:current_file
+    " echom "File extension: " . l:file_extension
     return l:file_extension ==# 'rest'
 endfunction
 
@@ -33,13 +33,13 @@ endfunction
 
 " --- Logging ---
 function! vim_restman_utils#LogInitialState()
-    #echom "Current window layout: " . vim_restman_utils#GetWindowLayout()
-    #echom "Current buffer list: " . vim_restman_utils#GetBufferList()
+    " echom "Current window layout: " . vim_restman_utils#GetWindowLayout()
+    " echom "Current buffer list: " . vim_restman_utils#GetBufferList()
 endfunction
 
 function! vim_restman_utils#LogFinalState()
-    #echom "Final window layout: " . vim_restman_utils#GetWindowLayout()
-    #echom "Final buffer list: " . vim_restman_utils#GetBufferList()
+    " echom "Final window layout: " . vim_restman_utils#GetWindowLayout()
+    " echom "Final buffer list: " . vim_restman_utils#GetBufferList()
 endfunction
 
 " --- Window and Buffer Info ---
@@ -65,7 +65,7 @@ endfunction
 
 " --- JSON Processing ---
 function! vim_restman_utils#ProcessJsonWithJq(json, filter)
-    #echom "Processing JSON with jq filter: " . a:filter
+    " echom "Processing JSON with jq filter: " . a:filter
     " TODO: Implement actual jq integration
     return "Processed JSON result"
 endfunction
@@ -78,7 +78,7 @@ endfunction
 " --- Error Handling ---
 function! vim_restman_utils#LogError(message)
     echohl ErrorMsg
-    #echom "RestMan Error: " . a:message
+    " echom "RestMan Error: " . a:message
     echohl None
 endfunction
 

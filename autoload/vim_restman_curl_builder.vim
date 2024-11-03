@@ -3,7 +3,7 @@
 " autoload/vim_restman_curl_builder.vim
 
 function! vim_restman_curl_builder#BuildCurlCommand(parsed_data, variables)
-    #echom "vim_restman_curl_builder#BuildCurlCommand() called"
+    " echom "vim_restman_curl_builder#BuildCurlCommand() called"
     
     let l:base_url = trim(get(a:parsed_data.globals, 'base_url', ''))
     let l:curl_command = 'curl -s'
@@ -32,11 +32,11 @@ function! vim_restman_curl_builder#BuildCurlCommand(parsed_data, variables)
         " Add request body
         let l:curl_command .= s:AddRequestBody(l:method, l:request, a:variables)
     else
-        #echom "Error: No request found in parsed data"
+        " echom "Error: No request found in parsed data"
         return ''
     endif
 
-    #echom "Built curl command: " . l:curl_command
+    " echom "Built curl command: " . l:curl_command
     return l:curl_command
 endfunction
 
@@ -48,8 +48,8 @@ function! s:AddHeaders(headers, variables)
     for header in split(a:headers, "\n")
         let l:original_header = header
         let l:processed_header = s:SubstituteVariables(header, a:variables)
-        #echom "Original header: " . l:original_header
-        #echom "Processed header: " . l:processed_header
+        " echom "Original header: " . l:original_header
+        " echom "Processed header: " . l:processed_header
         
         " Check if the processed header still contains any ':variable' placeholders
         if l:processed_header !~ ':[a-zA-Z0-9_]\+'
@@ -60,18 +60,18 @@ function! s:AddHeaders(headers, variables)
                     let l:header_value = join(l:header_parts[1:], ':')
                     if !empty(trim(l:header_value))
                         let l:curl_headers .= ' -H "' . trim(l:header_name) . ': ' . trim(l:header_value) . '"'
-                        #echom "Added header: " . trim(l:header_name) . ': ' . trim(l:header_value)
+                        " echom "Added header: " . trim(l:header_name) . ': ' . trim(l:header_value)
                     else
-                        #echom "Skipped header due to empty value: " . l:original_header
+                        " echom "Skipped header due to empty value: " . l:original_header
                     endif
                 else
-                    #echom "Skipped header due to invalid format: " . l:original_header
+                    " echom "Skipped header due to invalid format: " . l:original_header
                 endif
             else
-                #echom "Skipped header due to invalid format: " . l:original_header
+                " echom "Skipped header due to invalid format: " . l:original_header
             endif
         else
-            #echom "Skipped header due to unset variable: " . l:original_header
+            " echom "Skipped header due to unset variable: " . l:original_header
         endif
     endfor
     return l:curl_headers
@@ -95,24 +95,24 @@ endfunction
 
 function! s:SubstituteVariables(text, variables)
     let l:result = a:text
-    #echom "Original text: " . l:result
+    " echom "Original text: " . l:result
     for [var_name, var_info] in items(a:variables)
-        #echom "Checking variable: " . var_name . ", set: " . var_info.set . ", value: " . var_info.value
+        " echom "Checking variable: " . var_name . ", set: " . var_info.set . ", value: " . var_info.value
         if var_info.set && !empty(var_info.value)
             let l:result = substitute(l:result, ':' . var_name, var_info.value, 'g')
-            #echom "Substituted :". var_name ." with " . var_info.value
+            " echom "Substituted :". var_name ." with " . var_info.value
         else
             " Check if it's a captured variable
             let captured_value = vim_restman_capture_manager#GetCapturedValue(var_name)
             if !empty(captured_value)
                 let l:result = substitute(l:result, ':' . var_name, captured_value, 'g')
-                #echom "Using captured value for " . var_name . ": " . captured_value
+                " echom "Using captured value for " . var_name . ": " . captured_value
             else
-                #echom "Variable not set or captured: " . var_name
+                " echom "Variable not set or captured: " . var_name
             endif
         endif
     endfor
-    #echom "After substitution: " . l:result
+    " echom "After substitution: " . l:result
     return l:result
 endfunction
 
@@ -120,7 +120,7 @@ endfunction
 
 
 function! vim_restman_curl_builder#ExecuteCurlCommand(curl_command)
-    #echom "vim_restman_curl_builder#ExecuteCurlCommand() called"
+    " echom "vim_restman_curl_builder#ExecuteCurlCommand() called"
     let l:output = system(a:curl_command)
     let l:status = v:shell_error
     if l:status != 0
@@ -144,9 +144,9 @@ function! s:ParseVariables(variables_string)
         if len(l:parts) == 2
             let [var_name, var_value] = l:parts
             let l:variables_dict[trim(var_name)] = trim(var_value)
-            #echom "Parsed variable: " . trim(var_name) . " = " . trim(var_value)
+            " echom "Parsed variable: " . trim(var_name) . " = " . trim(var_value)
         else
-            #echom "Invalid variable format: " . var_line
+            " echom "Invalid variable format: " . var_line
         endif
     endfor
     return l:variables_dict
