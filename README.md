@@ -1,5 +1,8 @@
 # 🚀 vim-restman
 
+![image](https://github.com/user-attachments/assets/83ebccd8-cc4c-4db2-a7e6-22605995ae3d)
+
+
 Make API requests from the comfort of your Vim editor! 🛋️
 
 ## 🎭 What is vim-restman?
