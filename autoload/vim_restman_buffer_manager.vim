@@ -5,7 +5,7 @@ let s:restman_bufnr = -1
 
 
 function! vim_restman_buffer_manager#PopulateRestManBuffer(parsed_data, curl_command, output, updated_captures, variables)
-    echom "vim_restman_buffer_manager#PopulateRestManBuffer() called"
+    #echom "vim_restman_buffer_manager#PopulateRestManBuffer() called"
     
     " Generate content
     let l:content = s:GenerateBufferContent(a:parsed_data, a:curl_command, a:output, a:updated_captures, a:variables)

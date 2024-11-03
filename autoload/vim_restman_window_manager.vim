@@ -20,15 +20,15 @@ endif
 function! vim_restman_window_manager#SaveOriginalState()
     let s:original_winid = win_getid()
     let s:original_bufnr = bufnr('%')
-    echom "Original window ID: " . s:original_winid
-    echom "Original buffer number: " . s:original_bufnr
+    #echom "Original window ID: " . s:original_winid
+    #echom "Original buffer number: " . s:original_bufnr
 endfunction
 
 function! vim_restman_window_manager#ReturnToOriginalWindow()
     if win_gotoid(s:original_winid)
-        echom "Returned to original window"
+        #echom "Returned to original window"
     else
-        echom "Failed to return to original window"
+        #echom "Failed to return to original window"
     endif
 endfunction
 
@@ -37,7 +37,7 @@ function! vim_restman_window_manager#CreateOrUpdateRestManWindow()
     let l:existing_winid = s:FindRestManWindow()
     if l:existing_winid != 0
         call win_gotoid(l:existing_winid)
-        echom "Switched to existing RestMan window"
+        #echom "Switched to existing RestMan window"
     else
         vsplit
         enew
@@ -48,8 +48,8 @@ function! vim_restman_window_manager#CreateOrUpdateRestManWindow()
     endif
     let s:restman_bufnr = bufnr('%')
     let s:restman_winid = win_getid()
-    echom "RestMan window ID: " . s:restman_winid
-    echom "RestMan buffer number: " . s:restman_bufnr
+    #echom "RestMan window ID: " . s:restman_winid
+    #echom "RestMan buffer number: " . s:restman_bufnr
 endfunction
 
 function! s:FindRestManWindow()
@@ -80,15 +80,15 @@ function! vim_restman_window_manager#CloseRestManWindow()
     if l:restman_winid != 0
         call win_gotoid(l:restman_winid)
         close
-        echom "Closed RestMan window"
+        #echom "Closed RestMan window"
     else
-        echom "RestMan window not found"
+        #echom "RestMan window not found"
     endif
 endfunction
 
 function! vim_restman_window_manager#LogWindowLayout()
-    echom "Current window layout: " . s:GetWindowLayout()
-    echom "Current buffer list: " . s:GetBufferList()
+    #echom "Current window layout: " . s:GetWindowLayout()
+    #echom "Current buffer list: " . s:GetBufferList()
 endfunction
 
 function! s:GetWindowLayout()

@@ -12,7 +12,7 @@ endfunction
 
 function! vim_restman_capture_manager#UpdateCapturedValue(var_name, value)
     let g:vim_restman_captures[a:var_name] = a:value
-    echom "Updated captured value: " . a:var_name . " = " . a:value
+    #echom "Updated captured value: " . a:var_name . " = " . a:value
 endfunction
 
 
@@ -30,7 +30,7 @@ function! vim_restman_capture_manager#ProcessJsonResponse(json_response)
             if has_key(l:json_obj, key)
                 let l:updated_captures[key] = l:json_obj[key]
                 call vim_restman_capture_manager#UpdateCapturedValue(key, l:json_obj[key])
-                echom "Captured value for " . key . ": " . l:json_obj[key]
+                #echom "Captured value for " . key . ": " . l:json_obj[key]
             endif
         endfor
     endif
@@ -52,7 +52,7 @@ endfunction
 
 
 function! vim_restman_capture_manager#GetAllCapturedValues()
-    echom "All captured values: " . string(g:vim_restman_captures)
+    #echom "All captured values: " . string(g:vim_restman_captures)
     return g:vim_restman_captures
 endfunction
 
