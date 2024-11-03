@@ -9,29 +9,37 @@ function! vim_restman_capture_manager#DeclareCaptureVariable(var_name)
     let g:vim_restman_captures[a:var_name] = ''
 endfunction
 
+
 function! vim_restman_capture_manager#UpdateCapturedValue(var_name, value)
-    if has_key(g:vim_restman_captures, a:var_name)
-        let g:vim_restman_captures[a:var_name] = a:value
-    endif
+    let g:vim_restman_captures[a:var_name] = a:value
+    echom "Updated captured value: " . a:var_name . " = " . a:value
 endfunction
+
+
 
 function! vim_restman_capture_manager#GetCapturedValue(var_name)
     return get(g:vim_restman_captures, a:var_name, '')
 endfunction
 
+
 function! vim_restman_capture_manager#ProcessJsonResponse(json_response)
     let l:json_obj = json_decode(a:json_response)
     let l:updated_captures = {}
     if type(l:json_obj) == v:t_dict
-        for [key, value] in items(g:vim_restman_captures)
+        for key in keys(g:vim_restman_captures)
             if has_key(l:json_obj, key)
-                call vim_restman_capture_manager#UpdateCapturedValue(key, l:json_obj[key])
                 let l:updated_captures[key] = l:json_obj[key]
+                call vim_restman_capture_manager#UpdateCapturedValue(key, l:json_obj[key])
+                echom "Captured value for " . key . ": " . l:json_obj[key]
             endif
         endfor
     endif
     return l:updated_captures
 endfunction
+
+
+
+
 
 function! vim_restman_capture_manager#SubstituteCapturedValues(text)
     let l:result = a:text
@@ -41,9 +49,15 @@ function! vim_restman_capture_manager#SubstituteCapturedValues(text)
     return l:result
 endfunction
 
+
+
 function! vim_restman_capture_manager#GetAllCapturedValues()
+    echom "All captured values: " . string(g:vim_restman_captures)
     return g:vim_restman_captures
 endfunction
+
+
+
 
 " Function to clear all captured values
 function! vim_restman_capture_manager#ClearAllCapturedValues()

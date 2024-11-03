@@ -9,6 +9,8 @@ let s:restman_bufnr = 0
 " Global variable tracking structure
 let s:variables = {}
 
+
+
 function! vim_restman#Main()
     echom "vim_restman#Main() called"
     
@@ -24,11 +26,15 @@ function! vim_restman#Main()
 
     call s:InitializeVariables(l:parsed_data)
     echom "Initialized variables: " . string(s:variables)
-    
-    let l:request_index = vim_restman_utils#GetRequestIndexFromCursor(l:parsed_data)
-    echom "Selected request index: " . l:request_index
 
-    let l:curl_command = vim_restman_curl_builder#BuildCurlCommand(l:parsed_data, l:request_index, s:variables)
+    if empty(l:parsed_data.requests)
+        echom "No request found at cursor position"
+        return
+    endif
+
+    echom "Captured values before request: " . string(vim_restman_capture_manager#GetAllCapturedValues())
+
+    let l:curl_command = vim_restman_curl_builder#BuildCurlCommand(l:parsed_data, s:variables)
     echom "Built curl command: " . l:curl_command
 
     let [l:output, l:updated_captures] = vim_restman_curl_builder#ExecuteCurlCommand(l:curl_command)
@@ -37,51 +43,62 @@ function! vim_restman#Main()
 
     call s:UpdateVariables(l:updated_captures)
     echom "Updated variables: " . string(s:variables)
+    echom "Captured values after request: " . string(vim_restman_capture_manager#GetAllCapturedValues())
 
     call vim_restman_window_manager#CreateOrUpdateRestManWindow()
     let s:restman_winid = win_getid()
     let s:restman_bufnr = bufnr('%')
     call vim_restman_buffer_manager#SetRestManBufferNumber(s:restman_bufnr)
     
-    call vim_restman_buffer_manager#PopulateRestManBuffer(l:parsed_data, l:curl_command, l:output, l:request_index, l:updated_captures, s:variables)
+    call vim_restman_buffer_manager#PopulateRestManBuffer(l:parsed_data, l:curl_command, l:output, l:updated_captures, s:variables)
     
     call vim_restman_window_manager#ReturnToOriginalWindow()
     echom "Returned to original window"
+
+    " Log final state of captured values and variables
+    echom "Final captured values: " . string(vim_restman_capture_manager#GetAllCapturedValues())
+    echom "Final variables: " . string(s:variables)
 endfunction
 
 
 
 
+
+
 function! s:InitializeVariables(parsed_data)
-    let s:variables = {}
-    
+    " Initialize s:variables if it doesn't exist
+    if !exists('s:variables')
+        let s:variables = {}
+    endif
+
     echom "Initializing variables:"
-    " Initialize variables from @variables section
+    " Update or add variables from @variables section
     if has_key(a:parsed_data.globals, 'variables')
-        for var_line in split(a:parsed_data.globals.variables, "\n")
-            let parts = split(var_line, '=')
-            if len(parts) == 2
-                let [var_name, var_value] = parts
-                let var_name = trim(var_name)
-                let var_value = trim(var_value)
-                if var_value =~ '^\$'
-                    let var_value = eval('$' . var_value[1:])
-                endif
-                let s:variables[var_name] = {'value': var_value, 'set': 1}
-                echom "  Initialized variable: " . var_name . " = " . var_value . " (set: 1)"
-            else
-                echom "  Invalid variable format: " . var_line
+        for [var_name, var_value] in items(a:parsed_data.globals.variables)
+            let var_value = trim(var_value)
+            if var_value =~ '^\$'
+                let env_var_name = var_value[1:]
+                let var_value = exists('$' . env_var_name) ? eval('$' . env_var_name) : ''
+                echom "  Fetching environment variable: " . env_var_name . " = " . var_value
             endif
+            let s:variables[var_name] = {'value': var_value, 'set': !empty(var_value)}
+            echom "  Initialized variable: " . var_name . " = " . var_value . " (set: " . !empty(var_value) . ")"
         endfor
     endif
-    
+
     echom "Initializing capture variables:"
-    " Initialize capture variables
+    " Update or add capture variables
     if has_key(a:parsed_data.globals, 'capture')
         for capture_var in split(a:parsed_data.globals.capture, "\n")
             let capture_var = trim(capture_var)
-            let s:variables[capture_var] = {'value': '', 'set': 0}
-            echom "  Initialized capture variable: " . capture_var . " (set: 0)"
+            " Only update if not already set
+            if !has_key(s:variables, capture_var) || empty(s:variables[capture_var].value)
+                let captured_value = vim_restman_capture_manager#GetCapturedValue(capture_var)
+                let s:variables[capture_var] = {'value': captured_value, 'set': !empty(captured_value)}
+                echom "  Initialized capture variable: " . capture_var . " = " . captured_value . " (set: " . !empty(captured_value) . ")"
+            else
+                echom "  Preserved existing variable: " . capture_var . " = " . s:variables[capture_var].value
+            endif
         endfor
     endif
 
@@ -95,14 +112,19 @@ endfunction
 
 function! s:UpdateVariables(updated_captures)
     for [var_name, var_value] in items(a:updated_captures)
-        if has_key(s:variables, var_name)
-            let s:variables[var_name] = {'value': var_value, 'set': 1}
-            echom "Updated variable: " . var_name . " = " . var_value . " (set: 1)"
-        else
-            echom "Warning: Capture variable not initialized: " . var_name
-        endif
+        let s:variables[var_name] = {'value': var_value, 'set': 1}
+        echom "Updated variable: " . var_name . " = " . var_value . " (set: 1)"
+        " Also update the captured value in the capture manager
+        call vim_restman_capture_manager#UpdateCapturedValue(var_name, var_value)
     endfor
 endfunction
+
+
+
+
+
+
+
 
 function! vim_restman#GetVariables()
     return s:variables

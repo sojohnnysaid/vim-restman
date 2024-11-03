@@ -3,11 +3,12 @@
 " Global variable to store the RestMan buffer number
 let s:restman_bufnr = -1
 
-function! vim_restman_buffer_manager#PopulateRestManBuffer(parsed_data, curl_command, output, request_index, updated_captures, variables)
+
+function! vim_restman_buffer_manager#PopulateRestManBuffer(parsed_data, curl_command, output, updated_captures, variables)
     echom "vim_restman_buffer_manager#PopulateRestManBuffer() called"
     
     " Generate content
-    let l:content = s:GenerateBufferContent(a:parsed_data, a:curl_command, a:output, a:request_index, a:updated_captures, a:variables)
+    let l:content = s:GenerateBufferContent(a:parsed_data, a:curl_command, a:output, a:updated_captures, a:variables)
     
     " Clear and populate the buffer
     setlocal modifiable
@@ -15,11 +16,18 @@ function! vim_restman_buffer_manager#PopulateRestManBuffer(parsed_data, curl_com
     call setline(1, split(l:content, "\n"))
     setlocal nomodifiable
 
+    " Set filetype to trigger any potential filetype-specific settings
+    setlocal filetype=restman
+
     " Set up syntax highlighting
     call s:SetupSyntaxHighlighting()
+
+    " Force a redraw to ensure syntax highlighting is applied
+    redraw!
 endfunction
 
-function! s:GenerateBufferContent(parsed_data, curl_command, output, request_index, updated_captures, variables)
+
+function! s:GenerateBufferContent(parsed_data, curl_command, output, updated_captures, variables)
     let l:content = "=== Globals ===\n\n"
     for [key, value] in items(a:parsed_data.globals)
         let l:content .= key . ": " . string(value) . "\n"
@@ -27,12 +35,12 @@ function! s:GenerateBufferContent(parsed_data, curl_command, output, request_ind
     
     let l:content .= "\n=== Variables ===\n"
     for [var_name, var_info] in items(a:variables)
-        let l:content .= var_name . ": " . (var_info.set ? var_info.value : "(not set)") . "\n"
+        let l:content .= var_name . "\n"
     endfor
     
-    let l:content .= "\n=== Requests ===\n"
-    if len(a:parsed_data.requests) > a:request_index
-        let l:request = a:parsed_data.requests[a:request_index]
+    let l:content .= "\n=== Current Request ===\n"
+    if !empty(a:parsed_data.requests)
+        let l:request = a:parsed_data.requests[0]
         let l:content .= "Method: " . get(l:request, 'method', '') . "\n"
         let l:content .= "Endpoint: " . get(l:request, 'endpoint', '') . "\n"
         if has_key(l:request, 'headers')
@@ -42,7 +50,7 @@ function! s:GenerateBufferContent(parsed_data, curl_command, output, request_ind
             let l:content .= "Body:\n" . l:request.body . "\n"
         endif
     else
-        let l:content .= "No request found at index " . a:request_index . "\n"
+        let l:content .= "No request found\n"
     endif
     
     let l:content .= "\n=== Curl Command ===\n" . vim_restman_curl_builder#FormatCurlCommand(a:curl_command) . "\n"
@@ -58,34 +66,33 @@ function! s:GenerateBufferContent(parsed_data, curl_command, output, request_ind
     return l:content
 endfunction
 
+
+
 function! s:SetupSyntaxHighlighting()
     if has('syntax') && exists('g:syntax_on')
         " Clear any existing syntax
         syntax clear
 
-        " Define syntax regions
-        syntax region RestManGlobals start=/^=== Globals ===$/hs=e+1 end=/^===.*===$/ contains=RestManKeyValue
-        syntax region RestManVariables start=/^=== Variables ===$/hs=e+1 end=/^===.*===$/ contains=RestManKeyValue,RestManNotSet
-        syntax region RestManRequests start=/^=== Requests ===$/hs=e+1 end=/^===.*===$/ contains=RestManKeyValue
-        syntax region RestManCurlCommand start=/^=== Curl Command ===$/hs=e+1 end=/^===.*===$/ contains=RestManCurlOption
-        syntax region RestManCurlOutput start=/^=== Curl Output ===$/hs=e+1 end=/^===.*===$/ contains=RestManJson,RestManJsonKeyValue
-        syntax region RestManCapturedVariables start=/^=== Captured Variables ===$/hs=e+1 end=/\%$/ contains=RestManKeyValue
+        " Define syntax for headers
+        syntax match RestManHeader /^=== [^=]\+ ===$/ 
 
-        " Define syntax matches
-        syntax match RestManKeyValue /^\s*\zs\w\+\ze:/ contained
-        syntax match RestManNotSet /(not set)/ contained
-        syntax match RestManCurlOption /\s\zs-\w\+/ contained
+        " Define syntax region for Curl Output
+        syntax region RestManCurlOutput start=/^=== Curl Output ===$/hs=e+1 end=/\%$/ contains=RestManJson,RestManJsonKeyValue
+
+        " Define JSON syntax within Curl Output
         syntax region RestManJson start=/{/ end=/}/ contained contains=RestManJson,RestManJsonKeyValue fold
-        syntax match RestManJsonKeyValue /"\zs[^"]\+\ze"\s*:/ contained
+        syntax match RestManJsonKeyValue /"\zs\w\+\ze":/ contained
 
         " Set highlighting colors
-        highlight RestManKeyValue ctermfg=114 guifg=#87d787
-        highlight RestManNotSet ctermfg=203 guifg=#ff5f5f
-        highlight RestManCurlOption ctermfg=208 guifg=#ff8700
+        highlight RestManHeader ctermfg=121 guifg=#98FB98
         highlight RestManJsonKeyValue ctermfg=81 guifg=#5fd7ff
         highlight RestManJson ctermfg=NONE guifg=NONE
     endif
 endfunction
+
+
+
+
 
 function! s:PrettyPrintJson(json)
     if executable('jq')

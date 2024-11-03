@@ -2,8 +2,9 @@
 
 function! vim_restman_file_parser#ParseCurrentFile()
     echom "vim_restman_file_parser#ParseCurrentFile() called"
-    let l:captured_text = s:CaptureBetweenDelimiters('#Globals Start', '#Requests End')
-    return s:ParseCapturedText(l:captured_text)
+    let l:globals = s:CaptureBetweenDelimiters('#Globals Start', '#Globals End')
+    let l:current_request = s:CaptureCurrentRequest()
+    return s:ParseCapturedText(l:globals, l:current_request)
 endfunction
 
 function! s:CaptureBetweenDelimiters(start_delimiter, end_delimiter)
@@ -14,72 +15,67 @@ function! s:CaptureBetweenDelimiters(start_delimiter, end_delimiter)
     return l:captured_text
 endfunction
 
+function! s:CaptureCurrentRequest()
+    let l:cursor_line = line('.')
+    let l:start_line = search('^\s*--\s*$', 'bn')
+    let l:end_line = search('^\s*--\s*$', 'n')
+    
+    if l:start_line == 0 || l:end_line == 0 || l:cursor_line < l:start_line || l:cursor_line > l:end_line
+        echom "No request found at cursor position"
+        return []
+    endif
+    
+    let l:captured_request = getline(l:start_line + 1, l:end_line - 1)
+    echom "Captured current request: " . string(l:captured_request)
+    return l:captured_request
+endfunction
 
-
-function! s:ParseCapturedText(captured_text)
+function! s:ParseCapturedText(globals, current_request)
     echom "s:ParseCapturedText() called"
     let l:parsed_data = {
         \ 'globals': {},
         \ 'requests': []
     \ }
-    let l:current_section = ''
+
+    " Parse globals
     let l:current_key = ''
-    let l:current_request = {}
-
-    echom "Parsing Globals:"
-    for line in a:captured_text
+    for line in a:globals
         let l:trimmed_line = trim(line)
-        if empty(l:trimmed_line)
+        if empty(l:trimmed_line) || l:trimmed_line =~ '^#'
             continue
-        endif
-
-        if l:trimmed_line =~ '^#Globals Start'
-            let l:current_section = 'globals'
-            echom "  Entering globals section"
-        elseif l:trimmed_line =~ '^#Requests Start'
-            let l:current_section = 'requests'
-            echom "Entering requests section"
-        elseif l:trimmed_line =~ '^#'
-            continue
-        elseif l:current_section == 'globals'
-            if l:trimmed_line =~ '^@'
-                let l:current_key = l:trimmed_line[1:]
-                let l:parsed_data.globals[l:current_key] = ''
-                echom "  New global key: " . l:current_key
-            else
-                if l:current_key == 'variables'
-                    echom "    Variable: " . l:trimmed_line
-                elseif l:current_key == 'capture'
-                    echom "    Capture: " . l:trimmed_line
-                    call vim_restman_capture_manager#DeclareCaptureVariable(trim(l:trimmed_line))
-                endif
-                let l:parsed_data.globals[l:current_key] .= (empty(l:parsed_data.globals[l:current_key]) ? '' : "\n") . l:trimmed_line
+        elseif l:trimmed_line =~ '^@'
+            let l:current_key = l:trimmed_line[1:]
+            let l:parsed_data.globals[l:current_key] = ''
+            echom "  New global key: " . l:current_key
+        else
+            if l:current_key == 'variables'
+                echom "    Variable: " . l:trimmed_line
+            elseif l:current_key == 'capture'
+                echom "    Capture: " . l:trimmed_line
+                call vim_restman_capture_manager#DeclareCaptureVariable(trim(l:trimmed_line))
             endif
-        elseif l:current_section == 'requests'
-            if l:trimmed_line == '--'
-                if !empty(l:current_request)
-                    call add(l:parsed_data.requests, l:current_request)
-                    echom "Added request: " . string(l:current_request)
-                    let l:current_request = {}
-                endif
-            elseif l:trimmed_line =~ '^\(GET\|POST\|PUT\|DELETE\|PATCH\)'
-                let [l:method, l:endpoint] = split(l:trimmed_line, ' ')
-                let l:current_request = {'method': l:method, 'endpoint': l:endpoint, 'headers': '', 'body': ''}
-                echom "New request: " . l:method . " " . l:endpoint
-            elseif l:trimmed_line =~ '^[A-Za-z-]\+:'
-                let l:current_request.headers .= l:trimmed_line . "\n"
-                echom "Added header to request: " . l:trimmed_line
-            elseif !empty(l:current_request)
-                let l:current_request.body .= l:trimmed_line . "\n"
-                echom "Added to request body: " . l:trimmed_line
-            endif
+            let l:parsed_data.globals[l:current_key] .= (empty(l:parsed_data.globals[l:current_key]) ? '' : "\n") . l:trimmed_line
         endif
     endfor
 
-    if !empty(l:current_request)
-        call add(l:parsed_data.requests, l:current_request)
-        echom "Added final request: " . string(l:current_request)
-    endif
+    " Parse current request
+    let l:current_request_data = {'method': '', 'endpoint': '', 'headers': '', 'body': ''}
+    for line in a:current_request
+        let l:trimmed_line = trim(line)
+        if empty(l:trimmed_line)
+            continue
+        elseif l:current_request_data.method == ''
+            let [l:current_request_data.method, l:current_request_data.endpoint] = split(l:trimmed_line, ' ')
+            echom "New request: " . l:current_request_data.method . " " . l:current_request_data.endpoint
+        elseif l:trimmed_line =~ '^[A-Za-z-]\+:'
+            let l:current_request_data.headers .= l:trimmed_line . "\n"
+            echom "Added header to request: " . l:trimmed_line
+        else
+            let l:current_request_data.body .= l:trimmed_line . "\n"
+            echom "Added to request body: " . l:trimmed_line
+        endif
+    endfor
+    call add(l:parsed_data.requests, l:current_request_data)
 
     for key in keys(l:parsed_data.globals)
         let l:parsed_data.globals[key] = trim(l:parsed_data.globals[key])
@@ -96,8 +92,6 @@ function! s:ParseCapturedText(captured_text)
     echom "Final parsed data: " . string(l:parsed_data)
     return l:parsed_data
 endfunction
-
-
 
 function! s:ParseVariables(variables_string)
     let l:variables_dict = {}
