@@ -4,7 +4,7 @@ A simple REST client plugin for Vim.
 
 ## Description
 
-Vim RestMan is a lightweight plugin designed to help developers work with REST APIs directly within Vim. It allows you to capture and display text between delimiters, which can be useful for organizing and executing API requests.
+Vim RestMan is a lightweight plugin designed to help developers work with REST APIs directly within Vim. It also saves your token, which for me is usually the first request I make when testing API endpoints.
 
 ## Features
 
