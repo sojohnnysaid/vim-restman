@@ -58,7 +58,7 @@ function! s:GenerateBufferContent(parsed_data, curl_command, output, updated_cap
     "     let l:content .= "No request found\n"
     " endif
     
-    let l:content .= "\n=== Curl Command ===\n" . vim_restman_curl_builder#FormatCurlCommand(a:curl_command) . "\n"
+"    let l:content .= "\n=== Curl Command ===\n" . vim_restman_curl_builder#FormatCurlCommand(a:curl_command) . "\n"
     let l:content .= "\n=== Curl Output ===\n" . s:PrettyPrintJson(a:output)
 
     if !empty(a:updated_captures)
