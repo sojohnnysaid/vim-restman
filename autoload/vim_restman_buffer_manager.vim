@@ -28,30 +28,35 @@ endfunction
 
 
 function! s:GenerateBufferContent(parsed_data, curl_command, output, updated_captures, variables)
-    let l:content = "=== Globals ===\n\n"
-    for [key, value] in items(a:parsed_data.globals)
-        let l:content .= key . ": " . string(value) . "\n"
-    endfor
+    let l:content = ""
+
+    " Commented out Globals section
+    " let l:content = "=== Globals ===\n\n"
+    " for [key, value] in items(a:parsed_data.globals)
+    "     let l:content .= key . ": " . string(value) . "\n"
+    " endfor
     
-    let l:content .= "\n=== Variables ===\n"
-    for [var_name, var_info] in items(a:variables)
-        let l:content .= var_name . "\n"
-    endfor
+    " Commented out Variables section
+    " let l:content .= "\n=== Variables ===\n"
+    " for [var_name, var_info] in items(a:variables)
+    "     let l:content .= var_name . "\n"
+    " endfor
     
-    let l:content .= "\n=== Current Request ===\n"
-    if !empty(a:parsed_data.requests)
-        let l:request = a:parsed_data.requests[0]
-        let l:content .= "Method: " . get(l:request, 'method', '') . "\n"
-        let l:content .= "Endpoint: " . get(l:request, 'endpoint', '') . "\n"
-        if has_key(l:request, 'headers')
-            let l:content .= "Headers:\n" . l:request.headers . "\n"
-        endif
-        if has_key(l:request, 'body')
-            let l:content .= "Body:\n" . l:request.body . "\n"
-        endif
-    else
-        let l:content .= "No request found\n"
-    endif
+    " Commented out Current Request section
+    " let l:content .= "\n=== Current Request ===\n"
+    " if !empty(a:parsed_data.requests)
+    "     let l:request = a:parsed_data.requests[0]
+    "     let l:content .= "Method: " . get(l:request, 'method', '') . "\n"
+    "     let l:content .= "Endpoint: " . get(l:request, 'endpoint', '') . "\n"
+    "     if has_key(l:request, 'headers')
+    "         let l:content .= "Headers:\n" . l:request.headers . "\n"
+    "     endif
+    "     if has_key(l:request, 'body')
+    "         let l:content .= "Body:\n" . l:request.body . "\n"
+    "     endif
+    " else
+    "     let l:content .= "No request found\n"
+    " endif
     
     let l:content .= "\n=== Curl Command ===\n" . vim_restman_curl_builder#FormatCurlCommand(a:curl_command) . "\n"
     let l:content .= "\n=== Curl Output ===\n" . s:PrettyPrintJson(a:output)
@@ -65,7 +70,6 @@ function! s:GenerateBufferContent(parsed_data, curl_command, output, updated_cap
 
     return l:content
 endfunction
-
 
 
 function! s:SetupSyntaxHighlighting()
