@@ -62,6 +62,6 @@ Pull requests are welcome! For major changes, please open an issue first to disc
 MIT
 
 ## 🙋‍♂️ Author
-Created with love by [Your Name] 💖
+Created with love by John Yzaguirre  💖
 
 Remember, with great power comes great responsibility. Use vim-restman wisely! 🦸‍♂️
