@@ -26,7 +26,7 @@ vim Plug 'sojohnnysaid/vim-restman'
 1. Create a .rest file (all files must have the .rest extension).
 2. Set up your globals, variables, and requests.
 3. Move your cursor between the -- delimiters.
-4. Press Ctrl+i to send the API request.
+4. Press Ctrl+i to send the API request. Use `nnoremap <C-r> :call RestManMain()<CR>` in your config to change the key 🤓
 5. Watch the magic happen on the right side of your screen! ✨
 
 ## 📝 Example .rest File
