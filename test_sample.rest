@@ -1,0 +1,41 @@
+# RestMan Test File
+# To use this file:
+# 1. Start vim: vim test_sample.rest
+# 2. Source the init script: :source init.vim
+# 3. Enable debug mode: :RestManDebugOn
+# 4. Put cursor inside a request block
+# 5. Run the plugin: :RestManMain
+
+#Globals Start
+@variables
+base_url=https://jsonplaceholder.typicode.com
+token=my-test-token
+
+@capture
+response.id
+response.title
+#Globals End
+
+#Requests Start
+--
+GET {{base_url}}/posts/1
+Content-Type: application/json
+Authorization: Bearer {{token}}
+--
+POST {{base_url}}/posts
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "title": "Test Post 2",
+  "body": "This is a test post 2",
+  "userId": 2
+}
+--
+#Requests End
+
+# How to test:
+# 1. Place your cursor inside the GET request block (between the -- markers)
+# 2. Run :RestManMain
+# 3. You should see a response window with the API response
+# 4. Check the message log for debug information: :messages

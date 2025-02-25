@@ -1,0 +1,79 @@
+# RestMan Test File (v2)
+# To use this file:
+# 1. Start vim: vim test_sample_v2.rest
+# 2. Source the init script: :source init.vim
+# 3. Enable debug mode: :RestManDebugOn
+# 4. Put cursor inside a request block
+# 5. Run the plugin: :RestManExec
+
+#Globals Start
+@variables
+base_url=https://jsonplaceholder.typicode.com
+token=my-test-token
+
+@capture
+response.id
+response.title
+response.userId
+#Globals End
+
+#Requests Start
+--
+GET {{base_url}}/posts/1
+Content-Type: application/json
+Authorization: Bearer {{token}}
+--
+POST {{base_url}}/posts
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "title": "Test Post",
+  "body": "This is a test post",
+  "userId": 1
+}
+--
+GET {{base_url}}/posts?userId={{response.userId}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+--
+PUT {{base_url}}/posts/{{response.id}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "id": {{response.id}},
+  "title": "Updated Title",
+  "body": "Updated body content",
+  "userId": 1
+}
+--
+DELETE {{base_url}}/posts/{{response.id}}
+Authorization: Bearer {{token}}
+--
+#Requests End
+
+# Testing Instructions
+# -------------------
+#
+# 1. Start with the GET request to fetch a post
+#    - Place cursor inside the GET request (first --/-- block)
+#    - Run :RestManExec
+#    - A new buffer should open with the response
+#
+# 2. Run the POST request to create a new post
+#    - Place cursor inside the POST request (second --/-- block)
+#    - Run :RestManExec
+#    - A new buffer should open with the response
+#
+# 3. List all result buffers
+#    - Run :RestManList
+#    - You should see both buffers listed
+#
+# 4. Navigate between results
+#    - Run :RestManGoto 0 to go to the first result
+#    - Run :RestManGoto 1 to go to the second result
+#
+# 5. Try the dependent requests
+#    - These use variables captured from previous responses
+#    - They demonstrate how variables are shared between requests
