@@ -1,0 +1,40 @@
+#Globals Start
+@variables
+base_url=https://jsonplaceholder.typicode.com
+token=my-test-token
+
+@capture
+response.id
+response.title
+
+#Globals End
+
+#Requests Start
+--
+GET {{base_url}}/posts/1
+Authorization: Bearer {{token}}
+--
+POST {{base_url}}/posts
+Content-Type: application/json
+
+{
+  "title": "Test Post",
+  "body": "This is a test post",
+  "userId": 1
+}
+--
+PUT {{base_url}}/posts/{{response.id}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "id": {{response.id}},
+  "title": "Updated Title",
+  "body": "Updated body content",
+  "userId": 1
+}
+--
+DELETE {{base_url}}/posts/{{response.id}}
+Authorization: Bearer {{token}}
+--
+#Requests End
