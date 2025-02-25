@@ -170,6 +170,82 @@ function! vim_restman_buffer#PopulateResultBuffer(buffer_info, request, curl_com
     call vim_restman_utils#LogInfo("Populated result buffer with " . len(l:content) . " lines")
 endfunction
 
+" Add execution metadata to the result buffer
+" @param {dict} buffer_info - The buffer information
+" @param {string} status_code - HTTP status code
+" @param {float} execution_time - Request execution time in milliseconds
+" @param {number} exit_status - Curl exit status
+function! vim_restman_buffer#AddExecutionMetadata(buffer_info, status_code, execution_time, exit_status)
+    " Make sure we're in the right buffer
+    if bufnr('%') != a:buffer_info.number
+        execute 'buffer ' . a:buffer_info.number
+    endif
+    
+    " Find position to insert metadata (after Response section header)
+    let l:line_num = search('^## Response$', 'n')
+    if l:line_num > 0
+        " Set the buffer as modifiable
+        setlocal modifiable
+        
+        " Generate metadata content
+        let l:metadata = []
+        call add(l:metadata, '')
+        call add(l:metadata, '### Execution Metadata')
+        
+        " Add status code if available
+        if !empty(a:status_code)
+            call add(l:metadata, 'Status Code: ' . a:status_code)
+        endif
+        
+        " Add execution time
+        call add(l:metadata, 'Execution Time: ' . printf('%.2f', a:execution_time) . ' ms')
+        
+        " Add curl exit status
+        call add(l:metadata, 'Curl Exit Status: ' . a:exit_status)
+        
+        " Calculate content type from headers if possible
+        let l:content_type = s:ExtractContentType()
+        if !empty(l:content_type)
+            call add(l:metadata, 'Content Type: ' . l:content_type)
+        endif
+        
+        call add(l:metadata, '')
+        
+        " Insert metadata after Response section header
+        call append(l:line_num, l:metadata)
+        
+        " Set buffer back to non-modifiable
+        setlocal nomodifiable
+        
+        " Update syntax highlighting
+        call s:SetupSyntaxHighlighting()
+        
+        call vim_restman_utils#LogInfo("Added execution metadata to buffer")
+    endif
+endfunction
+
+" Extract Content-Type from headers section in buffer
+" @return {string} Content type or empty string if not found
+function! s:ExtractContentType()
+    let l:content_type = ''
+    let l:header_section_start = search('^### Response Headers$', 'n')
+    let l:header_section_end = search('^$', 'n', l:header_section_start)
+    
+    if l:header_section_start > 0 && l:header_section_end > 0
+        " Search for Content-Type header
+        for l:line_num in range(l:header_section_start + 1, l:header_section_end - 1)
+            let l:line = getline(l:line_num)
+            let l:matches = matchlist(l:line, 'Content-Type:\s*\(.\+\)')
+            if len(l:matches) > 1
+                let l:content_type = l:matches[1]
+                break
+            endif
+        endfor
+    endif
+    
+    return l:content_type
+endfunction
+
 " Navigate to a specific result buffer
 " @param {number} index - The index of the buffer in the list
 " @return {boolean} True if navigation was successful
@@ -253,11 +329,15 @@ function! s:SetupSyntaxHighlighting()
         syntax region RestManRequestBody start=/^### Body$/ end=/^$/ contains=RestManHeader
         syntax region RestManResponseBody start=/^### Response Body$/ end=/^$/ contains=RestManHeader
         syntax region RestManCurl start=/^### Generated Curl Command$/ end=/^$/ contains=RestManHeader,RestManCurlOption
+        syntax region RestManMetadata start=/^### Execution Metadata$/ end=/^$/ contains=RestManHeader,RestManStatusSuccess,RestManStatusError,RestManMetadataLine
         
         " Define syntax matches
         syntax match RestManHeader /^###.*$/
         syntax match RestManHeaderLine /^[A-Za-z-]\+:.*$/ contained
         syntax match RestManCurlOption /\s\zs-\w\+/ contained
+        syntax match RestManMetadataLine /^[A-Za-z ]\+:.*$/ contained
+        syntax match RestManStatusSuccess /Status Code: 2[0-9][0-9]/ contained
+        syntax match RestManStatusError /Status Code: [45][0-9][0-9]/ contained
         
         " Highlight JSON in response bodies
         syntax region RestManJson start=/{/ end=/}/ contained contains=RestManJson,RestManJsonKeyValue fold
@@ -268,6 +348,9 @@ function! s:SetupSyntaxHighlighting()
         highlight RestManHeaderLine ctermfg=118 guifg=#87ff00
         highlight RestManCurlOption ctermfg=208 guifg=#ff8700
         highlight RestManJsonKeyValue ctermfg=81 guifg=#5fd7ff
+        highlight RestManMetadataLine ctermfg=251 guifg=#c6c6c6
+        highlight RestManStatusSuccess ctermfg=120 guifg=#87ff87
+        highlight RestManStatusError ctermfg=203 guifg=#ff5f5f
         
         call vim_restman_utils#LogDebug("Applied syntax highlighting to result buffer")
     endif

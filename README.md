@@ -15,6 +15,7 @@ Vim RestMan is a powerful plugin designed to help developers work with REST APIs
 - Multiple variable reference formats (`:var`, `{{var}}`, `$var`)
 - Easy navigation between request results
 - Support for all main HTTP methods (GET, POST, PUT, DELETE, PATCH)
+- Optional verbose output with detailed response information
 
 ## Installation
 
@@ -93,6 +94,8 @@ Authorization: Bearer {{token}}
 
 - `:RestManDebugOn` - Enable debug mode
 - `:RestManDebugOff` - Disable debug mode
+- `:RestManVerboseOn` - Enable detailed response information
+- `:RestManVerboseOff` - Disable detailed response information
 - `:RestManReload` - Reload the plugin (useful during development)
 
 ### Variable Capture and Substitution
@@ -128,6 +131,9 @@ let g:vim_restman_split_size = 80
 
 " Maximum requests to keep in history
 let g:vim_restman_max_history = 20
+
+" Enable verbose output to show detailed response information
+let g:vim_restman_verbose_output = 1
 ```
 
 ## Requirements

@@ -31,6 +31,10 @@ if !exists('g:vim_restman_max_history')
     let g:vim_restman_max_history = 20  " maximum number of requests to keep in history
 endif
 
+if !exists('g:vim_restman_verbose_output')
+    let g:vim_restman_verbose_output = 0  " 0 = minimal output, 1 = verbose output
+endif
+
 " Define default mappings if they don't exist
 if !hasmapto('<Plug>RestManExec')
     nmap <unique> <C-i> <Plug>RestManExec
@@ -63,6 +67,14 @@ endif
 
 if !exists(":RestManDebugOff")
     command -nargs=0 RestManDebugOff let g:vim_restman_debug = 0 | echo "RestMan debug mode disabled"
+endif
+
+if !exists(":RestManVerboseOn")
+    command -nargs=0 RestManVerboseOn let g:vim_restman_verbose_output = 1 | echo "RestMan verbose output enabled"
+endif
+
+if !exists(":RestManVerboseOff")
+    command -nargs=0 RestManVerboseOff let g:vim_restman_verbose_output = 0 | echo "RestMan verbose output disabled"
 endif
 
 if !exists(":RestManReload")
